@@ -1,7 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Dict, Any, List
 
 class SRoomsBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     hotel_id: int
     name: str
     description: str
@@ -11,9 +13,9 @@ class SRoomsBase(BaseModel):
     image_id: int | None
 
 class SRooms(SRoomsBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     rooms_left: int # количество оставшихся номеров
     total_cost: int # стоимость бронирования номера за весь период
 
-    class Config:
-        from_attributes = True

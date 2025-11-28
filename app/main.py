@@ -25,6 +25,7 @@ from redis import asyncio as aioredis
 
 from sqladmin import Admin, ModelView
 
+from starlette.middleware.sessions import SessionMiddleware
 
 
 
@@ -45,6 +46,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+
+
+#app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY) # !!! Добавил для настройки аутентификации админки
+
+
 app.mount("/static", StaticFiles(directory="app/static"), "static")
 
 app.include_router(router_users)
@@ -56,7 +62,7 @@ app.include_router(router_pages)
 app.include_router(router_images)
 
 
-admin = Admin(app, engine, authentication_backend=authentication_backend)
+admin = Admin(app, engine, authentication_backend=authentication_backend) # , authentication_backend=authentication_backend
 admin.add_view(UsersAdmin)
 admin.add_view(BookingsAdmin)
 admin.add_view(UsersHotels)

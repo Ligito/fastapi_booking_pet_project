@@ -1,7 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import date
 
+
 class SBooking(BaseModel):
+    # позволяет Pydantic читать данные напрямую из атрибутов ORM-объектов
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     room_id: int
@@ -11,7 +14,3 @@ class SBooking(BaseModel):
     price: int
     total_cost: int
     total_days: int
-
-    # позволяет Pydantic читать данные напрямую из атрибутов ORM-объектов
-    class Config:
-        from_attributes = True

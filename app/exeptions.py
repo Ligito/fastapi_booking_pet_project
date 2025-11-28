@@ -44,6 +44,11 @@ class ThereIsNotHotelWithThisID(BookingException):
     status_code = status.HTTP_404_NOT_FOUND
     detail = "Нет отеля с таким id"
 
+class RoomFullyBooked(BookingException):
+    status_code=status.HTTP_409_CONFLICT
+    detail="Не осталось свободных номеров"
+
+
 
 # UserAlreadyExistExceptions = HTTPException(
 #     status_code=status.HTTP_409_CONFLICT,

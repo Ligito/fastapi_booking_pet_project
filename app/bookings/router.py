@@ -26,7 +26,14 @@ async def add_booking(
         room_id: int, date_from: date, date_to: date,
         user: Users = Depends(get_current_user)
 ):
-    booking = await BookingDAO.add(user.id, room_id, date_from, date_to)
+    booking = await BookingDAO.add(
+        user.id,
+        room_id,
+        date_from,
+        date_to
+    )
+    if not booking:
+        raise RoomCannotBeBooked
     # Можно и так, но легче как ниже, но в pydantic моделе должен быть атрибут from_attributes=True
     #booking_dict = TypeAdapter(SBooking).validate_python(booking).model_dump()
     booking_dict = SBooking.model_validate(booking).model_dump()
@@ -36,10 +43,7 @@ async def add_booking(
     # background_tasks.add_task(send_booking_confirmation_email, booking_dict, user.email)
 
     # вариант с celery отправка письма в телегу. CHAT_ID захардкожен на мой что бы не обновлять БС(возможная доработка)
-    send_booking_confirmation_telegram.delay(booking_dict, settings.TELEGRAM_BOT_CHAT_ID)
-
-    if not booking:
-        raise RoomCannotBeBooked
+    #send_booking_confirmation_telegram.delay(booking_dict, settings.TELEGRAM_BOT_CHAT_ID)
 
     return booking_dict
 

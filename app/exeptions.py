@@ -48,7 +48,9 @@ class RoomFullyBooked(BookingException):
     status_code=status.HTTP_409_CONFLICT
     detail="Не осталось свободных номеров"
 
-
+class HotelIncorrectParameters(BookingException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    detail = "Неверные параметры поиска отеля"
 
 # UserAlreadyExistExceptions = HTTPException(
 #     status_code=status.HTTP_409_CONFLICT,

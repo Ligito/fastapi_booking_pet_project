@@ -1,4 +1,5 @@
 from celery import Celery
+
 from app.config import settings
 
 # Команда для запуска celery:

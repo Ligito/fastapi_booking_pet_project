@@ -1,13 +1,13 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from asyncpg.pgproto.pgproto import timedelta
 from fastapi import HTTPException
 from jose import jwt
 from passlib.context import CryptContext
 from pydantic import EmailStr
-from app.users.dao import UsersDAO
-from app.config import settings
 
+from app.config import settings
+from app.users.dao import UsersDAO
 
 pwd_context = CryptContext(schemes=['bcrypt'])
 

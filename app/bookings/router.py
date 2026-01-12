@@ -1,15 +1,19 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
 from datetime import date
+
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import TypeAdapter
+from fastapi_versioning import version
 
 from app.bookings.dao import BookingDAO
 from app.bookings.schemas import SBooking
 from app.config import settings
-from app.tasks.tasks import send_booking_confirmation_email, send_booking_confirmation_telegram
-
+from app.exeptions import RoomCannotBeBooked, ThereIsNotDataToDelete
+from app.tasks.tasks import (
+    send_booking_confirmation_email,
+    send_booking_confirmation_telegram,
+)
 from app.users.dependencies import get_current_user
 from app.users.models import Users
-from app.exeptions import RoomCannotBeBooked, ThereIsNotDataToDelete
 
 router = APIRouter(
     prefix="/bookings",
@@ -17,10 +21,12 @@ router = APIRouter(
 )
 
 @router.get("")
+@version(1)
 async def get_bookings(user: Users = Depends(get_current_user)) -> list[SBooking]:
     return await BookingDAO.find_all(user_id=user.id)
 
 @router.post("")
+@version(1)
 async def add_booking(
         background_tasks: BackgroundTasks,
         room_id: int, date_from: date, date_to: date,
@@ -48,6 +54,7 @@ async def add_booking(
     return booking_dict
 
 @router.delete("/{booking_id}")
+@version(1)
 async def delete_booking(
         booking_id: int,
         user: Users = Depends(get_current_user),

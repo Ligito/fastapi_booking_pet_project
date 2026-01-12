@@ -1,17 +1,25 @@
+from datetime import date
+
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.bookings.models import Bookings
+from app.dao.base import BaseDAO
 from app.database import async_session_maker
 from app.hotels.rooms.models import Rooms
-from app.dao.base import BaseDAO
-from sqlalchemy import select, and_, or_, func
-
-from datetime import date
+from app.logger import logger
 
 
 class RoomsDAO(BaseDAO):
     model = Rooms
 
     @classmethod
-    async def search_for_rooms(cls, hotel_id: int, date_from: date, date_to: date):
+    async def find_all(
+            cls,
+            hotel_id: int,
+            date_from: date,
+            date_to: date
+    ):
         """
         WITH booked_rooms AS (
         SELECT
@@ -48,58 +56,72 @@ class RoomsDAO(BaseDAO):
                 r.image_id,
                 ((DATE '2025-05-25' - DATE '2025-05-05') * price)
         """
-        async with (async_session_maker() as session):
+        try:
+            async with (async_session_maker() as session):
 
-            # Подзапрос: количество забронированных комнат
-            booked_rooms = select(Bookings.room_id,
-                                  func.count(Bookings.id).label("booked_count")
-                                  ).where(
-                or_(
-                    and_(
-                        Bookings.date_from >= date_from,
-                        Bookings.date_from <= date_to
-                    ),
-                    and_(
-                        Bookings.date_from <= date_from,
-                        Bookings.date_to > date_from
-                    ),
-                )
-            ).group_by(
-                Bookings.room_id
-            ).cte("booked_rooms")
+                # Подзапрос: количество забронированных комнат
+                booked_rooms = select(Bookings.room_id,
+                                      func.count(Bookings.id).label("booked_count")
+                                      ).where(
+                    or_(
+                        and_(
+                            Bookings.date_from >= date_from,
+                            Bookings.date_from <= date_to
+                        ),
+                        and_(
+                            Bookings.date_from <= date_from,
+                            Bookings.date_to > date_from
+                        ),
+                    )
+                ).group_by(
+                    Bookings.room_id
+                ).cte("booked_rooms")
 
-            # Подзапрос: total_cost и rooms_left
-            subq_total_cost_and_rooms_left = select(Rooms.id.label("room_id"),
-                                                ((date_to - date_from).days * Rooms.price).label("total_cost"),
-                                                func.sum(Rooms.quantity - func.coalesce(booked_rooms.c.booked_count, 0)).label("rooms_left")
-            ).join(
-                booked_rooms, Rooms.id == booked_rooms.c.room_id, isouter=True
-            ).group_by(
-                Rooms.id,
-                Rooms.price
-            ).subquery()
-
-            final_query = (
-                select(
-                    Rooms.id,
-                    Rooms.hotel_id,
-                    Rooms.name,
-                    Rooms.description,
-                    Rooms.services,
-                    Rooms.price,
-                    Rooms.quantity,
-                    Rooms.image_id,
-                    subq_total_cost_and_rooms_left.c.total_cost,
-                    subq_total_cost_and_rooms_left.c.rooms_left
+                # Подзапрос: total_cost и rooms_left
+                subq_total_cost_and_rooms_left = select(Rooms.id.label("room_id"),
+                                                    ((date_to - date_from).days * Rooms.price).label("total_cost"),
+                                                    func.sum(Rooms.quantity - func.coalesce(booked_rooms.c.booked_count, 0)).label("rooms_left")
                 ).join(
-                    subq_total_cost_and_rooms_left,
-                    Rooms.id == subq_total_cost_and_rooms_left.c.room_id
-                ).where(
-                    Rooms.hotel_id == hotel_id
+                    booked_rooms, Rooms.id == booked_rooms.c.room_id, isouter=True
+                ).group_by(
+                    Rooms.id,
+                    Rooms.price
+                ).subquery()
+
+                final_query = (
+                    select(
+                        Rooms.id,
+                        Rooms.hotel_id,
+                        Rooms.name,
+                        Rooms.description,
+                        Rooms.services,
+                        Rooms.price,
+                        Rooms.quantity,
+                        Rooms.image_id,
+                        subq_total_cost_and_rooms_left.c.total_cost,
+                        subq_total_cost_and_rooms_left.c.rooms_left
+                    ).join(
+                        subq_total_cost_and_rooms_left,
+                        Rooms.id == subq_total_cost_and_rooms_left.c.room_id
+                    ).where(
+                        Rooms.hotel_id == hotel_id
+                    )
                 )
-            )
-            get_rooms_in_hotel_result = await session.execute(final_query)
-            return get_rooms_in_hotel_result.mappings().all()
+                get_rooms_in_hotel_result = await session.execute(final_query)
+                return get_rooms_in_hotel_result.mappings().all()
+        except (SQLAlchemyError, Exception) as e:
+            if isinstance(e, SQLAlchemyError):
+                msg = "Database"
+            elif isinstance(e, Exception):
+                msg = "Unknown"
+            msg += " Exc: Cannot add booking"
+            extra = {
+                "hotel_id": hotel_id,
+                "date_from": date_from,
+                "date_to": date_to,
+            }
+            logger.error(msg,extra=extra,exc_info=True,)
+
 
             # final_query = (
             #     select(

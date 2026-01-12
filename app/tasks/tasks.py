@@ -1,16 +1,17 @@
 import smtplib
+from pathlib import Path
+from time import sleep
 
+from PIL import Image
 from pydantic import EmailStr
 
 from app.config import settings
 from app.tasks.celery_config import celery
-from PIL import Image
-from pathlib import Path
-from time import sleep
-
-
 from app.tasks.email_templates import create_booking_confirmation_template
-from app.tasks.telegram_templates import format_booking_message, send_message_to_telegram
+from app.tasks.telegram_templates import (
+    format_booking_message,
+    send_message_to_telegram,
+)
 
 
 @celery.task

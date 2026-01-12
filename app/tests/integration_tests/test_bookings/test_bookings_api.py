@@ -1,6 +1,9 @@
 import pytest
 from httpx import AsyncClient
 
+from app.users.dao import UsersDAO
+
+
 @pytest.mark.parametrize("room_id, date_from, date_to, booked_rooms, status_code",[
     (4, "2030-05-01", "2030-05-15", 3, 200),
     (4, "2030-05-02", "2030-05-16", 4, 200),
@@ -28,4 +31,18 @@ async def test_add_and_get_booking(room_id, date_from, date_to, status_code, boo
     response = await authenticated_ac.get("/bookings")
 
     assert len(response.json()) == booked_rooms
+
+
+async def test_add_bookings_and_delete(authenticated_ac: AsyncClient):
+    response_bookings = await authenticated_ac.get("/bookings")
+
+    assert response_bookings.status_code == 200
+
+    existing_bookings = [bookings["id"] for bookings in response_bookings.json()]
+    for booking_id in existing_bookings:
+        response = await authenticated_ac.delete(f"/bookings/{booking_id}")
+
+    response = await authenticated_ac.get("/bookings")
+    assert len(response.json()) == 0
+
 

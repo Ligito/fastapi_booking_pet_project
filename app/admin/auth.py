@@ -5,8 +5,12 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 
 from app.config import settings
-from app.exeptions import IncorrectEmailOrPasswordException, TokenExpiredException, IncorrectTokenFormatException, \
-    UserIsNotPresentException
+from app.exeptions import (
+    IncorrectEmailOrPasswordException,
+    IncorrectTokenFormatException,
+    TokenExpiredException,
+    UserIsNotPresentException,
+)
 from app.users.auth import authenticate_user, create_access_token
 from app.users.dao import UsersDAO
 from app.users.dependencies import get_current_user

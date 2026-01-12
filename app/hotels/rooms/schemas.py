@@ -1,5 +1,7 @@
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, Dict, Any, List
+
 
 class SRoomsBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)

@@ -1,13 +1,10 @@
-from fastapi import APIRouter
-
+from datetime import date, datetime, timedelta
 from typing import List
 
-from fastapi import Query
+from fastapi import APIRouter, Query
 
 from app.hotels.rooms.dao import RoomsDAO
 from app.hotels.rooms.schemas import SRooms
-
-from datetime import date, datetime, timedelta
 
 router = APIRouter(
     prefix="/hotels",
@@ -21,4 +18,4 @@ async def get_rooms(
         date_from: date = Query(..., description=f"Например, {datetime.now().date()}"),
         date_to: date = Query(..., description=f"Например, {(datetime.now() + timedelta(days=14)).date()}")
 ) -> List[SRooms]:
-    return await RoomsDAO.search_for_rooms(hotel_id=hotel_id, date_from=date_from, date_to=date_to)
+    return await RoomsDAO.find_all(hotel_id=hotel_id, date_from=date_from, date_to=date_to)
